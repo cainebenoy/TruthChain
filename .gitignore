@@ -1,0 +1,16 @@
+# Node.js
+/node_modules
+npm-debug.log
+*.lock
+
+# Python
+/venv
+/__pycache__/
+*.pyc
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Secrets
+.env
