@@ -1,10 +1,29 @@
 from fastapi import FastAPI, UploadFile, File
+from fastapi.middleware.cors import CORSMiddleware
 from transformers import pipeline
 from PIL import Image
 import io
 import logging
 
 app = FastAPI()
+
+# --- Add CORS Middleware ---
+
+# This is the list of "origins" (websites) that are allowed to make requests.
+origins = [
+    "http://localhost:5173",  # Our React app's address
+    "http://127.0.0.1:5173", # Also add the IP address
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,       # Allow the origins listed above
+    allow_credentials=True,
+    allow_methods=["*"],         # Allow all methods (GET, POST, etc.)
+    allow_headers=["*"],         # Allow all headers
+)
+
+# --- End of CORS Middleware ---
 
 
 @app.get("/")
