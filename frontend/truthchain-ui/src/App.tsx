@@ -89,7 +89,7 @@ function Home() {
       const formData = new FormData();
       formData.append("file", file);
 
-      const aiResponse = await fetch("http://127.0.0.1:8000/detect", {
+      const aiResponse = await fetch("https-truthchain-api.onrender.com/detect", {
         method: "POST",
         body: formData,
       });
