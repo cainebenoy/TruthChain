@@ -12,7 +12,9 @@ app = FastAPI()
 # This is the list of "origins" (websites) that are allowed to make requests.
 origins = [
     "http://localhost:5173",  # Our React app's address
-    "http://127.0.0.1:5173", # Also add the IP address
+    "http://127.0.0.1:5173",  # Also add the IP address
+    "https://truthchain-ui.vercel.app",  # Vercel deployed frontend (variant 1)
+    "https://truth-chain-rho.vercel.app",  # Vercel deployed frontend (variant 2)
 ]
 
 app.add_middleware(
