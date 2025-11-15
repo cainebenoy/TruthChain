@@ -1,17 +1,39 @@
 import { useState } from 'react';
 import { ethers } from 'ethers';
 import TruthRegistryABI from './TruthRegistry.json';
+import { Routes, Route, Link } from 'react-router-dom';
+import DemoPage from './DemoPage';
 
-// --- PASTE YOUR DEPLOYED CONTRACT ADDRESS HERE ---
 const CONTRACT_ADDRESS = "0xf9Dc86ece60cb27CC46da56Fd970d23a5B0A24fc";
 
 function App() {
+  return (
+    <div>
+      <nav style={{ 
+        display: 'flex', 
+        gap: '1rem', 
+        padding: '1rem', 
+        backgroundColor: '#1a1a1a', 
+        justifyContent: 'center' 
+      }}>
+        <Link to="/" style={{ color: 'white', textDecoration: 'none' }}>Home (Register)</Link>
+        <Link to="/demo" style={{ color: 'white', textDecoration: 'none' }}>Live Demo Page</Link>
+      </nav>
+
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/demo" element={<DemoPage />} />
+      </Routes>
+    </div>
+  );
+}
+
+function Home() {
   const [account, setAccount] = useState<string | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [status, setStatus] = useState<string>("Please connect your wallet.");
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  // 1. Connects to MetaMask
   const connectWallet = async () => {
     if (window.ethereum) {
       try {
@@ -19,15 +41,11 @@ function App() {
         setStatus("Connecting to MetaMask...");
         
         const provider = new ethers.BrowserProvider(window.ethereum, "any");
-        // Request account access
         const accounts = await provider.send('eth_requestAccounts', []);
         
-        // Ensure we're on the Sepolia network
         const network = await provider.getNetwork();
-        console.log("Current network:", network.chainId, "Need: 11155111");
-        
-        if (network.chainId !== 11155111n) { // 11155111n is the chainId for Sepolia
-          setStatus(`Wrong network! You're on chain ${network.chainId}. Please switch MetaMask to Sepolia (chain 11155111).`);
+        if (network.chainId !== 11155111n) {
+          setStatus("Please switch your MetaMask to the Sepolia network.");
           setIsLoading(false);
           return;
         }
@@ -35,9 +53,9 @@ function App() {
         setAccount(accounts[0]);
         setStatus("Wallet connected. Please select a file.");
         setIsLoading(false);
-      } catch (error: any) {
+      } catch (error) {
         console.error(error);
-        setStatus(`Connection error: ${error.message || "Failed to connect wallet."}`);
+        setStatus("Failed to connect wallet.");
         setIsLoading(false);
       }
     } else {
@@ -45,7 +63,6 @@ function App() {
     }
   };
 
-  // 2. Handles file selection from the input
   const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       setFile(e.target.files[0]);
@@ -53,7 +70,6 @@ function App() {
     }
   };
 
-  // 3. Hashes the file in the browser (SHA-256)
   const getFileHash = async (fileToHash: File): Promise<string> => {
     const buffer = await fileToHash.arrayBuffer();
     const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
@@ -62,7 +78,6 @@ function App() {
     return hashHex;
   };
 
-  // 4. Main function: Verify with AI and Register on Blockchain
   const handleRegister = async () => {
     if (!file) return setStatus("Please select a file first.");
     if (!account) return setStatus("Please connect your wallet.");
@@ -70,7 +85,6 @@ function App() {
     setIsLoading(true);
 
     try {
-      // === AI VERIFICATION STEP ===
       setStatus("Step 1/4: Uploading to AI for verification...");
       const formData = new FormData();
       formData.append("file", file);
@@ -83,15 +97,8 @@ function App() {
       if (!aiResponse.ok) throw new Error("AI server error.");
       const aiResult = await aiResponse.json();
 
-      //if (aiResult.is_fake) {
-      //  setStatus(`AI Result: DEEPFAKE (Confidence: ${aiResult.confidence.toFixed(2)}). Registration cancelled.`);
-      //  setIsLoading(false);
-      //  return;
-      //}
-
       setStatus(`Step 2/4: AI confirmed: ${aiResult.label}. Hashing file...`);
 
-      // === BLOCKCHAIN REGISTRATION STEP ===
       const fileHash = await getFileHash(file);
       setStatus(`Step 3/4: File hash: ${fileHash.substring(0, 10)}... Registering on blockchain...`);
 
@@ -102,9 +109,9 @@ function App() {
       const tx = await contract.registerFile(fileHash);
       setStatus("Step 4/4: Transaction sent... waiting for confirmation...");
       
-      await tx.wait(); // Wait for 1 confirmation
+      await tx.wait(); 
 
-      setStatus(`✅ SUCCESS! File registered on the Polygon Amoy blockchain.`);
+      setStatus(`✅ SUCCESS! File registered on the Sepolia blockchain.`);
       setIsLoading(false);
 
     } catch (error: any) {
@@ -118,9 +125,9 @@ function App() {
     }
   };
 
-  // 5. Function to check a file's status
   const handleCheck = async () => {
     if (!file) return setStatus("Please select a file to check.");
+    if (!account) return setStatus("Please connect your wallet.");
 
     setIsLoading(true);
     setStatus("Hashing file to check...");
@@ -147,7 +154,6 @@ function App() {
     }
   };
 
-  // --- JSX for the UI ---
   return (
     <div className="container">
       <header>
