@@ -15,6 +15,7 @@ origins = [
     "http://127.0.0.1:5173",  # Also add the IP address
     "https://truthchain-ui.vercel.app",  # Vercel deployed frontend (variant 1)
     "https://truth-chain-rho.vercel.app",  # Vercel deployed frontend (variant 2)
+    "https://truth-chain-i5r3khcih-cainebenoy-gmailcoms-projects.vercel.app",  # Vercel preview deployment
 ]
 
 app.add_middleware(
