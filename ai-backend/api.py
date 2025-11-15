@@ -51,9 +51,16 @@ async def detect(file: UploadFile = File(...)):
     # will have the pipeline available.
     global model_pipeline
     if model_pipeline is None:
-        print("--- LAZY-LOADING DEEPFAKE MODEL (this should only happen once) ---")
-        model_pipeline = pipeline("image-classification", model="prithivMLmods/Deep-Fake-Detector-v2-Model")
-        print("--- MODEL LOADED SUCCESSFULLY ---")
+        try:
+            print("--- LAZY-LOADING DEEPFAKE MODEL (this should only happen once) ---")
+            model_pipeline = pipeline(
+                "image-classification",
+                model="prithivMLmods/Deep-Fake-Detector-v2-Model",
+            )
+            print("--- MODEL LOADED SUCCESSFULLY ---")
+        except Exception as e:
+            # If the model fails to load (e.g. memory/time limits on free tier), return a clear error.
+            return {"error": "Model initialization failed", "detail": str(e)}
 
     # Read bytes from the uploaded file
     contents = await file.read()
@@ -65,7 +72,10 @@ async def detect(file: UploadFile = File(...)):
         return {"error": "Invalid image file", "detail": str(e)}
 
     # Run the AI model (which is now guaranteed to be loaded)
-    results = model_pipeline(image)
+    try:
+        results = model_pipeline(image)
+    except Exception as e:
+        return {"error": "Model inference failed", "detail": str(e)}
     top_result = results[0]
     label = top_result["label"]
     score = top_result["score"]
