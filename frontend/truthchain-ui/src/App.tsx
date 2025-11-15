@@ -33,6 +33,8 @@ function Home() {
   const [file, setFile] = useState<File | null>(null);
   const [status, setStatus] = useState<string>("Please connect your wallet.");
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  // Configurable API base; override in .env.local via VITE_API_BASE
+  const API_BASE = (import.meta as any).env?.VITE_API_BASE || "https://truthchain-api.onrender.com";
 
   const connectWallet = async () => {
     if (window.ethereum) {
@@ -89,12 +91,26 @@ function Home() {
       const formData = new FormData();
       formData.append("file", file);
 
-      const aiResponse = await fetch("https://truthchain-api.onrender.com/detect", {
-        method: "POST",
-        body: formData,
-      });
+      let aiResponse: Response | null = null;
+      let detectUrl = `${API_BASE}/detect`;
+      try {
+        aiResponse = await fetch(detectUrl, { method: "POST", body: formData });
+      } catch (primaryErr) {
+        console.warn("Primary AI endpoint fetch failed", primaryErr);
+      }
 
-      if (!aiResponse.ok) throw new Error("AI server error.");
+      // Fallback: if running locally and remote failed, try local backend
+      if ((!aiResponse || !aiResponse.ok) && window.location.hostname === 'localhost' && !API_BASE.includes('127.0.0.1')) {
+        try {
+          detectUrl = 'http://127.0.0.1:8000/detect';
+          aiResponse = await fetch(detectUrl, { method: 'POST', body: formData });
+          console.info('Used local fallback for detect endpoint.');
+        } catch (fallbackErr) {
+          console.error('Local fallback also failed', fallbackErr);
+        }
+      }
+
+      if (!aiResponse || !aiResponse.ok) throw new Error(`AI server error for ${detectUrl}`);
       const aiResult = await aiResponse.json();
 
       setStatus(`Step 2/4: AI confirmed: ${aiResult.label}. Hashing file...`);
